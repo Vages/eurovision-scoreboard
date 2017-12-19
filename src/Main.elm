@@ -3,6 +3,7 @@ module Main exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
+import Europe exposing (..)
 
 
 main : Program Never Model Msg
@@ -44,12 +45,11 @@ initialModel =
 
         initialPointQueue =
             [ 1, 2, 3, 4, 5, 6, 7, 8, 10, 12 ]
+
+        initialParticipants =
+            Europe.countries |> List.map (\countryName -> { country = { name = countryName }, points = initialPoints })
     in
-        { participants =
-            [ { country = { name = "Norway" }, points = initialPoints }
-            , { country = { name = "Sweden" }, points = initialPoints }
-            , { country = { name = "Denmark" }, points = initialPoints }
-            ]
+        { participants = initialParticipants
         , pointQueue = initialPointQueue
         }
 
@@ -101,13 +101,15 @@ update msg model =
                     rotatedPointQueue =
                         List.drop 1 model.pointQueue ++ List.take 1 model.pointQueue
 
-                    pa =
+                    pointAward =
                         { country = country
                         , points = pointsToBeGiven
                         }
                 in
                     ( { model
-                        | participants = List.map (givePointsToParticipantIfCountryHasSameName pa) model.participants
+                        | participants =
+                            model.participants
+                                |> List.map (givePointsToParticipantIfCountryHasSameName pointAward)
                         , pointQueue = rotatedPointQueue
                       }
                     , Cmd.none
@@ -133,7 +135,9 @@ view model =
         displayCountry : Participant -> Html Msg
         displayCountry c =
             div []
-                [ button [ onClick (GivePoints { name = c.country.name }) ] [ text (c.country.name ++ " " ++ toString c.points) ]
+                [ button
+                    [ onClick <| GivePoints { name = c.country.name } ]
+                    [ text <| c.country.name ++ " " ++ toString c.points ]
                 ]
 
         pointsToBeAwarded =
@@ -145,12 +149,12 @@ view model =
                     0
     in
         div []
-            [ h1 [] [ text "Eurovision ScoreBoard" ]
-            , h2 [] [ text (toString pointsToBeAwarded ++ " points goes to") ]
+            [ h1 [] [ text "Eurovision Scoreboard" ]
+            , h2 [] [ text <| toString pointsToBeAwarded ++ " points goes to" ]
             , div
                 []
                 (model.participants
-                    |> List.sortBy .points
+                    |> List.sortBy .points .
                     |> List.reverse
                     |> List.map
                         displayCountry
