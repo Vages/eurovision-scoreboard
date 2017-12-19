@@ -132,11 +132,22 @@ view model =
     let
         displayCountry : Participant -> Html Msg
         displayCountry c =
-            li [ onClick (GivePoints { name = c.country.name }) ] [ text (c.country.name ++ " " ++ toString c.points) ]
+            div []
+                [ button [ onClick (GivePoints { name = c.country.name }) ] [ text (c.country.name ++ " " ++ toString c.points) ]
+                ]
+
+        pointsToBeAwarded =
+            case (model.pointQueue |> List.head) of
+                Just points ->
+                    points
+
+                _ ->
+                    0
     in
         div []
             [ h1 [] [ text "Eurovision ScoreBoard" ]
-            , ul
+            , h2 [] [ text (toString pointsToBeAwarded ++ " points goes to") ]
+            , div
                 []
                 (model.participants
                     |> List.sortBy .points
