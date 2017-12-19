@@ -154,7 +154,7 @@ view model =
             , div
                 []
                 (model.participants
-                    |> List.sortBy .points .
+                    |> List.sortBy .points
                     |> List.reverse
                     |> List.map
                         displayCountry
