@@ -4,6 +4,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Europe exposing (..)
+import Set exposing (Set)
 
 
 main : Program Never Model Msg
@@ -34,6 +35,7 @@ type alias Participant =
 type alias Model =
     { participants : List Participant
     , pointQueue : List Int
+    , namesOfCountriesThatHaveGottenPointsInThisRound : Set String
     }
 
 
@@ -51,6 +53,7 @@ initialModel =
     in
         { participants = initialParticipants
         , pointQueue = initialPointQueue
+        , namesOfCountriesThatHaveGottenPointsInThisRound = Set.empty
         }
 
 
@@ -76,44 +79,52 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    let
-        givePointsToParticipantIfCountryHasSameName : PointAward -> Participant -> Participant
-        givePointsToParticipantIfCountryHasSameName pointAward participant =
-            if pointAward.country == participant.country then
-                { participant | points = participant.points + pointAward.points }
-            else
-                participant
-    in
-        case msg of
-            NoOp ->
-                ( model, Cmd.none )
+    case msg of
+        NoOp ->
+            ( model, Cmd.none )
 
-            GivePoints country ->
-                let
-                    pointsToBeGiven =
-                        case List.head model.pointQueue of
-                            Just points ->
-                                points
+        GivePoints country ->
+            let
+                givePointsToParticipantIfCountryHasSameName : PointAward -> Participant -> Participant
+                givePointsToParticipantIfCountryHasSameName pointAward participant =
+                    if pointAward.country == participant.country then
+                        { participant | points = participant.points + pointAward.points }
+                    else
+                        participant
 
-                            _ ->
-                                0
+                pointsToBeGiven =
+                    case List.head model.pointQueue of
+                        Just points ->
+                            points
 
-                    rotatedPointQueue =
-                        List.drop 1 model.pointQueue ++ List.take 1 model.pointQueue
+                        _ ->
+                            0
 
-                    pointAward =
-                        { country = country
-                        , points = pointsToBeGiven
-                        }
-                in
-                    ( { model
-                        | participants =
-                            model.participants
-                                |> List.map (givePointsToParticipantIfCountryHasSameName pointAward)
-                        , pointQueue = rotatedPointQueue
-                      }
-                    , Cmd.none
-                    )
+                rotatedPointQueue =
+                    List.drop 1 model.pointQueue ++ List.take 1 model.pointQueue
+
+                pointAward =
+                    { country = country
+                    , points = pointsToBeGiven
+                    }
+
+                newSetOfCountriesThatHaveReceivedPoints =
+                    case pointsToBeGiven of
+                        12 ->
+                            Set.empty
+
+                        _ ->
+                            Set.insert country.name model.namesOfCountriesThatHaveGottenPointsInThisRound
+            in
+                ( { model
+                    | participants =
+                        model.participants
+                            |> List.map (givePointsToParticipantIfCountryHasSameName pointAward)
+                    , pointQueue = rotatedPointQueue
+                    , namesOfCountriesThatHaveGottenPointsInThisRound = newSetOfCountriesThatHaveReceivedPoints
+                  }
+                , Cmd.none
+                )
 
 
 
@@ -132,12 +143,18 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     let
-        displayCountry : Participant -> Html Msg
-        displayCountry c =
+        shouldBeDisabled : Participant -> Bool
+        shouldBeDisabled participant =
+            Set.member participant.country.name <| model.namesOfCountriesThatHaveGottenPointsInThisRound
+
+        displayParticipant : Participant -> Html Msg
+        displayParticipant participant =
             div []
                 [ button
-                    [ onClick <| GivePoints { name = c.country.name } ]
-                    [ text <| c.country.name ++ " " ++ toString c.points ]
+                    [ onClick <| GivePoints { name = participant.country.name }
+                    , disabled <| shouldBeDisabled participant
+                    ]
+                    [ text <| participant.country.name ++ " " ++ toString participant.points ]
                 ]
 
         pointsToBeAwarded =
@@ -157,6 +174,6 @@ view model =
                     |> List.sortBy .points
                     |> List.reverse
                     |> List.map
-                        displayCountry
+                        displayParticipant
                 )
             ]
