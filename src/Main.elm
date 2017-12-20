@@ -166,7 +166,7 @@ view model =
                         [ style
                             [ ( "width", "50px" )
                             , ( "height", "50px" )
-                            , ( "background-image", "url('assets/flags-normal/" ++ participant.country.abbreviation ++ ".png')" )
+                            , ( "background-image", "url('/assets/flags-normal/" ++ participant.country.abbreviation ++ ".png')" )
                             , ( "border-radius", "50px" )
                             , ( "background-position", "center center" )
                             , ( "background-size", "cover" )
