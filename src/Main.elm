@@ -23,6 +23,7 @@ main =
 
 type alias Country =
     { name : String
+    , abbreviation : String
     }
 
 
@@ -49,7 +50,7 @@ initialModel =
             [ 1, 2, 3, 4, 5, 6, 7, 8, 10, 12 ]
 
         initialParticipants =
-            Europe.countries |> List.map (\countryName -> { country = { name = countryName }, points = initialPoints })
+            Europe.countries |> List.map (\country -> { country = country, points = initialPoints })
     in
         { participants = initialParticipants
         , pointQueue = initialPointQueue
@@ -151,10 +152,32 @@ view model =
         displayParticipant participant =
             div []
                 [ button
-                    [ onClick <| GivePoints { name = participant.country.name }
+                    [ onClick <| GivePoints participant.country
+                    , style
+                        [ ( "display", "flex" )
+                        , ( "justify-content", "flex-start" )
+                        , ( "width", "100%" )
+                        , ( "font-size", "1.8rem" )
+                        , ( "padding", "10px" )
+                        ]
                     , disabled <| shouldBeDisabled participant
                     ]
-                    [ text <| participant.country.name ++ " " ++ toString participant.points ]
+                    [ div
+                        [ style
+                            [ ( "width", "50px" )
+                            , ( "height", "50px" )
+                            , ( "background-image", "url('/assets/flags-normal/" ++ participant.country.abbreviation ++ ".png')" )
+                            , ( "border-radius", "50px" )
+                            , ( "background-position", "center center" )
+                            , ( "background-size", "cover" )
+                            ]
+                        ]
+                        []
+                    , div
+                        [ style [ ( "width", "100%" ) ] ]
+                        [ text participant.country.name ]
+                    , div [] [ text <| toString participant.points ]
+                    ]
                 ]
 
         pointsToBeAwarded =
